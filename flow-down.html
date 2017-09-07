@@ -1,0 +1,106 @@
+<script>
+    (FlowDown => {
+        /**
+         * State consumer mixin.
+         */
+        FlowDown.StateReceiver = (parent) => {
+            return class StateReceiverMixin extends parent {
+                connectedCallback () {
+                    super.connectedCallback();
+                    if (!this.constructor.properties) {
+                        return;
+                    }
+                    Object.keys(this.constructor.properties).forEach((propertyName) => {
+                        var property = this.constructor.properties[propertyName];
+                        if (property.linkState){
+                            this.set(propertyName, FlowDown.AppStateComponent.get(property.linkState));
+                            var setValue = (path, value) => {
+                                this.set(path, value);
+                                this.notifyPath(path);
+                            };
+                            window.AppStateComponent.addWatcher(this, property, propertyName, setValue);
+                        }
+                    });
+                }
+                disconnectedCallback () {
+                    super.disconnectedCallback();
+                    window.AppStateComponent.removeWatchersForComponent(this);
+                }
+                getState () {
+                    return window.AppStateComponent.getState();
+                }
+                dispatch (action) {
+                    window.dispatchEvent(new CustomEvent('action', { detail: action }));
+                }
+            }
+        };
+        /**
+         * State provider mixin.
+         */
+        FlowDown.StateProvider = (parent) => {
+            return class StateProviderBehavior extends parent {
+                constructor () {
+                    super();
+                    FlowDown.AppStateComponent = this;
+                    this.componentWatchers = [];
+                    window.addEventListener('action', this._onAction.bind(this));
+                }
+                reducer () {}
+                _onAction (e) {
+                    let action = e.detail;
+                    this.reducer(this.state, action);
+                }
+                static get properties() {
+                    return {
+                        type: Object
+                    };
+                }
+                static get observers() {
+                    return ['_stateChanged(state.*)'];
+                }
+                getState () {
+                    return this.state;
+                }
+                _stateChanged (changeRecord) {
+                    this.componentWatchers.forEach((watcher) => {
+                        let statePath = `state.${watcher.property.linkState}`;
+                        if (changeRecord.path == statePath) {
+                            // Perfect match of paths
+                            watcher.set(watcher.propertyName, changeRecord.value);
+                        } else if (changeRecord.path.startsWith(statePath)) {
+                            if (changeRecord.path.endsWith('.splices')) {
+                                // Splice changes
+                                var value = this.get(statePath);
+                                watcher.set(watcher.propertyName, value.slice());
+                            } else {
+                                if (watcher.property.type === Array && changeRecord.path.endsWith('.length')) {
+                                    // Avoid changing the lengths of arrays
+                                    return;
+                                }
+                                // Parent change
+                                watcher.set(changeRecord.path.replace(statePath, watcher.propertyName), changeRecord.value);
+                            }
+                        } else if (statePath.startsWith(changeRecord.path)) {
+                            // Parent node in the path was changed, update the value altogether
+                            watcher.set(watcher.propertyName, this.get(statePath));
+                        }
+                    });
+                }
+                addWatcher (component, property, propertyName, setValue) {
+                    this.componentWatchers.push({
+                        set: setValue,
+                        component: component,
+                        property: property,
+                        propertyName: propertyName
+                    });
+                }
+                removeWatchersForComponent (component){
+                    this.componentWatchers = this.componentWatchers.filter((watcher) => {
+                        return watcher.component !== component;
+                    });
+                }
+            }
+        };
+    })(window.FlowDown = window.FlowDown || {});
+
+</script>
