@@ -1,104 +1,127 @@
 <script>
     (FlowDown => {
-        /**
-         * State consumer mixin.
-         */
-        FlowDown.StateReceiver = (parent) => {
-            return class StateReceiverMixin extends parent {
-                connectedCallback () {
-                    super.connectedCallback();
-                    if (!this.constructor.properties) {
-                        return;
-                    }
-                    Object.keys(this.constructor.properties).forEach((propertyName) => {
-                        var property = this.constructor.properties[propertyName];
-                        if (property.linkState){
-                            this.set(propertyName, FlowDown.AppStateComponent.get(property.linkState));
-                            var setValue = (path, value) => {
-                                this.set(path, value);
-                                this.notifyPath(path);
-                            };
-                            window.AppStateComponent.addWatcher(this, property, propertyName, setValue);
-                        }
-                    });
-                }
-                disconnectedCallback () {
-                    super.disconnectedCallback();
-                    window.AppStateComponent.removeWatchersForComponent(this);
-                }
-                getState () {
-                    return window.AppStateComponent.getState();
-                }
-                dispatch (action) {
-                    window.dispatchEvent(new CustomEvent('action', { detail: action }));
-                }
+        let storesCount = 0;
+        FlowDown.createStore = (initialState) => {
+            let watchers = [],
+                mutators = [],
+                storeId = storesCount++,
+                providerMixin, receiverMixin;
+            function addWatcher (component, property, propertyName, setValue) {
+                watchers.push({
+                    set: setValue,
+                    component: component,
+                    property: property,
+                    propertyName: propertyName
+                });
             }
-        };
-        /**
-         * State provider mixin.
-         */
-        FlowDown.StateProvider = (parent) => {
-            return class StateProviderBehavior extends parent {
-                constructor () {
-                    super();
-                    FlowDown.AppStateComponent = this;
-                    this.componentWatchers = [];
-                    window.addEventListener('action', this._onAction.bind(this));
-                }
-                reducer () {}
-                _onAction (e) {
-                    let action = e.detail;
-                    this.reducer(this.state, action);
-                }
-                static get properties() {
-                    return {
-                        type: Object
-                    };
-                }
-                static get observers() {
-                    return ['_stateChanged(state.*)'];
-                }
-                getState () {
-                    return this.state;
-                }
-                _stateChanged (changeRecord) {
-                    this.componentWatchers.forEach((watcher) => {
-                        let statePath = `state.${watcher.property.linkState}`;
-                        if (changeRecord.path == statePath) {
-                            // Perfect match of paths
-                            watcher.set(watcher.propertyName, changeRecord.value);
-                        } else if (changeRecord.path.startsWith(statePath)) {
-                            if (changeRecord.path.endsWith('.splices')) {
-                                // Splice changes
-                                var value = this.get(statePath);
-                                watcher.set(watcher.propertyName, value.slice());
-                            } else {
-                                if (watcher.property.type === Array && changeRecord.path.endsWith('.length')) {
-                                    // Avoid changing the lengths of arrays
-                                    return;
-                                }
-                                // Parent change
-                                watcher.set(changeRecord.path.replace(statePath, watcher.propertyName), changeRecord.value);
-                            }
-                        } else if (statePath.startsWith(changeRecord.path)) {
-                            // Parent node in the path was changed, update the value altogether
-                            watcher.set(watcher.propertyName, this.get(statePath));
+            function removeWatchers () {
+                watchers = [];
+            }
+            function addMutator (mutator) {
+                mutators.push(mutator);
+            }
+            receiverMixin = (parent) => {
+                return class StateReceiverMixin extends parent {
+                    connectedCallback () {
+                        super.connectedCallback();
+                        if (!this.constructor.properties) {
+                            return;
                         }
-                    });
+                        Object.keys(this.constructor.properties).forEach((propertyName) => {
+                            var property = this.constructor.properties[propertyName];
+                            if (property.linkState){
+                                this.set(propertyName, FlowDown.AppStateComponent.get(property.linkState));
+                                var setValue = (path, value) => {
+                                    this.set(path, value);
+                                    this.notifyPath(path);
+                                };
+                                addWatcher(this, property, propertyName, setValue);
+                            }
+                        });
+                    }
+                    disconnectedCallback () {
+                        super.disconnectedCallback();
+                        removeWatchers();
+                    }
+                    getState () {
+                        return getState();
+                    }
+                    dispatch (action) {
+                        window.dispatchEvent(new CustomEvent(`action-${storeId}`, { detail: action }));
+                    }
                 }
-                addWatcher (component, property, propertyName, setValue) {
-                    this.componentWatchers.push({
-                        set: setValue,
-                        component: component,
-                        property: property,
-                        propertyName: propertyName
-                    });
+            };
+            providerMixin = (parent) => {
+                return class StateProviderBehavior extends parent {
+                    constructor () {
+                        super();
+                        FlowDown.AppStateComponent = this;
+                        window.addEventListener(`action-${storeId}`, this._onAction.bind(this));
+                    }
+                    addMutator (mutator) {
+                        addMutator(mutator);
+                    }
+                    _onAction (e) {
+                        let action = e.detail;
+                        mutators.forEach(mutator => {
+                            mutator.call({
+                                get: this.get,
+                                set: this.set,
+                                push: this.push,
+                                pop: this.pop,
+                                splice: this.splice,
+                                shift: this.shift,
+                                unshift: this.unshift
+                            }, action);
+                        });
+                    }
+                    static get properties() {
+                        return {
+                            state: {
+                                type: Object,
+                                value: () => {
+                                    return initialState || {};
+                                }
+                            }
+                        };
+                    }
+                    static get observers() {
+                        return ['_stateChanged(state.*)'];
+                    }
+                    getState () {
+                        return this.state;
+                    }
+                    _stateChanged (changeRecord) {
+                        watchers.forEach((watcher) => {
+                            let statePath = `state.${watcher.property.linkState}`;
+                            if (changeRecord.path == statePath) {
+                                // Perfect match of paths
+                                watcher.set(watcher.propertyName, changeRecord.value);
+                            } else if (changeRecord.path.startsWith(statePath)) {
+                                if (changeRecord.path.endsWith('.splices')) {
+                                    // Splice changes
+                                    var value = this.get(statePath);
+                                    watcher.set(watcher.propertyName, value.slice());
+                                } else {
+                                    if (watcher.property.type === Array && changeRecord.path.endsWith('.length')) {
+                                        // Avoid changing the lengths of arrays
+                                        return;
+                                    }
+                                    // Parent change
+                                    watcher.set(changeRecord.path.replace(statePath, watcher.propertyName), changeRecord.value);
+                                }
+                            } else if (statePath.startsWith(changeRecord.path)) {
+                                // Parent node in the path was changed, update the value altogether
+                                watcher.set(watcher.propertyName, this.get(statePath));
+                            }
+                        });
+                    }
                 }
-                removeWatchersForComponent (component){
-                    this.componentWatchers = this.componentWatchers.filter((watcher) => {
-                        return watcher.component !== component;
-                    });
-                }
+            };
+            return {
+                StateReceiver: receiverMixin,
+                StateProvider: providerMixin,
+                addMutator
             }
         };
     })(window.FlowDown = window.FlowDown || {});

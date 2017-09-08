@@ -1,0 +1,45 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="./td-list.html">
+<link rel="import" href="./td-editor.html">
+<link rel="import" href="./state.html">
+
+<dom-module id="td-app">
+    <template>
+        <style>
+        :host {
+            display: block;
+        }
+        </style>
+        <h2>FlowDown Todo</h2>
+        <td-list></td-list>
+        <td-editor></td-editor>
+    </template>
+
+    <script>
+        /**
+         * @customElement
+         * @polymer
+         */
+        class TDApp extends TodoApp.Store.StateProvider(Polymer.Element) {
+            static get is() { return 'td-app'; }
+            constructor () {
+                super();
+                this.addMutator(action => {
+                    switch (action.type) {
+                        case 'CHECK_TODO':
+                            this.set(`state.todos.${action.data.index}.done`, action.data.value);
+                            break;
+                        case 'ADD_TODO':
+                            // Prevent empty todos
+                            if (!action.data || action.data === '') {
+                                return;
+                            }
+                            this.push('state.todos', { text: action.data });
+                    }
+                });
+            }
+        }
+
+        window.customElements.define(TDApp.is, TDApp);
+    </script>
+</dom-module>

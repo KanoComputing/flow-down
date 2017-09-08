@@ -1,0 +1,20 @@
+{
+  "name": "flow-down",
+  "homepage": "https://github.com/KanoComputing/flow-down",
+  "authors": [
+    "Kano Computing Ltd."
+  ],
+  "description": "Redux style data flow management set of mixins for Polymer 2.x+",
+  "main": "flow-down.html",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "devDependencies": {
+    "polymer": "^2.0.2"
+  }
+}

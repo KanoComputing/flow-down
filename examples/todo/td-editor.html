@@ -1,0 +1,36 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="./state.html">
+
+<dom-module id="td-editor">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+        </style>
+        <form on-submit="_sumbit">
+            <input id="editor" type="text">
+            <button type="submit">Add</button>
+        </form>
+    </template>
+
+    <script>
+        /**
+         * @customElement
+         * @polymer
+         */
+        class TDEditor extends TodoApp.Store.StateReceiver(Polymer.Element) {
+            static get is() { return 'td-editor'; }
+            _sumbit (e) {
+                let value = this.$.editor.value;
+                this.dispatch({ type: 'ADD_TODO', data: value });
+                e.preventDefault();
+                e.stopPropagation();
+                this.$.editor.value = '';
+                this.$.editor.focus();
+            }
+        }
+
+        window.customElements.define(TDEditor.is, TDEditor);
+    </script>
+</dom-module>

@@ -1,0 +1,49 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="./state.html">
+<link rel="import" href="./cl-clock.html">
+
+<dom-module id="cl-app">
+    <template>
+        <style>
+        :host {
+            display: block;
+        }
+        </style>
+        <h2>FlowDown clock</h2>
+        <cl-clock></cl-clock>
+    </template>
+
+    <script>
+        /**
+         * @customElement
+         * @polymer
+         */
+        class ClApp extends ClockApp.Store.StateProvider(Polymer.Element) {
+            static get is() { return 'cl-app'; }
+            static get properties() {
+                return {
+                    state: {
+                        type: Object,
+                        value: () => {
+                            return {
+                                time: Date.now()
+                            };
+                        }
+                    }
+                };
+            }
+            constructor () {
+                super();
+                this.addMutator(action => {
+                    switch (action.type) {
+                        case 'UPDATE_TIME':
+                            this.set('state.time', Date.now());
+                            break;
+                    }
+                });
+            }
+        }
+
+        window.customElements.define(ClApp.is, ClApp);
+    </script>
+</dom-module>

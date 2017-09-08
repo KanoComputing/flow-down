@@ -1,0 +1,14 @@
+<link rel="import" href="../../flow-down.html">
+<script>
+    ((TodoApp) => {
+
+        TodoApp.Store = FlowDown.createStore({
+            todos: [{
+                text: 'Feed the cat'
+            }, {
+                text: 'Feed myself'
+            }]
+        });
+
+    })(window.TodoApp = window.TodoApp || {});
+</script>

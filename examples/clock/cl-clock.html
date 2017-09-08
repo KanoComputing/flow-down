@@ -1,0 +1,42 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="./state.html">
+
+<dom-module id="cl-clock">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+        </style>
+        Timestamp: <span>[[_toLocal(time)]]</span>
+    </template>
+
+    <script>
+        /**
+         * @customElement
+         * @polymer
+         */
+        class ClClock extends ClockApp.Store.StateReceiver(Polymer.Element) {
+            static get is() { return 'cl-clock'; }
+            static get properties() {
+                return {
+                    time: {
+                        type: Number,
+                        linkState: 'time'
+                    }
+                };
+            }
+            constructor () {
+                super();
+                setInterval(() => {
+                    this.dispatch({ type: 'UPDATE_TIME' });
+                }, 1000);
+            }
+            _toLocal (time) {
+                return new Date(time).toLocaleTimeString();
+            }
+        }
+
+        window.customElements.define(ClClock.is, ClClock);
+    </script>
+</dom-module>

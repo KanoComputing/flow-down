@@ -1,0 +1,53 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="./state.html">
+
+<dom-module id="td-list">
+    <template>
+        <style>
+            :host {
+                display: block;
+            }
+            .todo span.done {
+                text-decoration: line-through;
+                opacity: 0.7;
+            }
+        </style>
+        <template is="dom-repeat" items="[[todos]]">
+            <div class="todo">
+                <label>
+                    <input type="checkbox" checked="[[item.done]]" on-change="_checkChanged">
+                    <span class$="[[_computeTextClass(item.done)]]">[[item.text]]</span>
+                </label>
+            </div>
+        </template>
+    </template>
+
+    <script>
+        /**
+         * @customElement
+         * @polymer
+         */
+        class TDList extends TodoApp.Store.StateReceiver(Polymer.Element) {
+            static get is() { return 'td-list'; }
+            static get properties() {
+                return {
+                    todos: {
+                        type: Array,
+                        linkState: 'todos'
+                    }
+                };
+            }
+            _computeTextClass (done) {
+                return done ? 'done' : '';
+            }
+            _checkChanged (e) {
+                let index = e.model.get('index'),
+                    value = e.target.checked;
+                this.dispatch({ type: 'CHECK_TODO', data: { index, value } });
+            }
+        }
+
+        window.customElements.define(TDList.is, TDList);
+    </script>
+</dom-module>
