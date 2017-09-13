@@ -5,6 +5,7 @@
             let watchers = [],
                 mutators = [],
                 storeId = storesCount++,
+                appStateComponent,
                 providerMixin, receiverMixin;
             function addWatcher (component, property, propertyName, setValue) {
                 watchers.push({
@@ -30,7 +31,7 @@
                         Object.keys(this.constructor.properties).forEach((propertyName) => {
                             var property = this.constructor.properties[propertyName];
                             if (property.linkState){
-                                this.set(propertyName, FlowDown.AppStateComponent.get(property.linkState));
+                                this.set(propertyName, appStateComponent.get(property.linkState));
                                 var setValue = (path, value) => {
                                     this.set(path, value);
                                     this.notifyPath(path);
@@ -44,7 +45,7 @@
                         removeWatchers();
                     }
                     getState () {
-                        return getState();
+                        return appStateComponent.state;
                     }
                     dispatch (action) {
                         window.dispatchEvent(new CustomEvent(`action-${storeId}`, { detail: action }));
@@ -55,7 +56,7 @@
                 return class StateProviderBehavior extends parent {
                     constructor () {
                         super();
-                        FlowDown.AppStateComponent = this;
+                        appStateComponent = this;
                         window.addEventListener(`action-${storeId}`, this._onAction.bind(this));
                     }
                     addMutator (mutator) {
