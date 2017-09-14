@@ -129,6 +129,8 @@ Changing the local properties will not flow up to the state, make sure you only 
     - splice
     - shift
     - unshift
+ - `dispatch(action)`
+    Dispatches an action to the store
 
 When using these methods, you will need to specify `state` as the root variable of the path.
 
@@ -149,6 +151,7 @@ this.set('state.todos.0.done', true);
 
 ### StateReceiver
  - `getState()` returns the store's state
+ - `dispatch(action)` Dispatches an action to the store
 
 Any element extending the StateReceiver mixin and declaring a `linkState` on their properties will have a dynamic link between the property and the state's data setup.
 

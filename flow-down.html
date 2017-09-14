@@ -21,6 +21,9 @@
             function addMutator (mutator) {
                 mutators.push(mutator);
             }
+            function dispatch (action) {
+                window.dispatchEvent(new CustomEvent(`action-${storeId}`, { detail: action }));
+            }
             receiverMixin = (parent) => {
                 return class StateReceiverMixin extends parent {
                     connectedCallback () {
@@ -48,7 +51,7 @@
                         return appStateComponent.state;
                     }
                     dispatch (action) {
-                        window.dispatchEvent(new CustomEvent(`action-${storeId}`, { detail: action }));
+                        dispatch(action);
                     }
                 }
             };
@@ -122,7 +125,8 @@
             return {
                 StateReceiver: receiverMixin,
                 StateProvider: providerMixin,
-                addMutator
+                addMutator,
+                dispatch
             }
         };
     })(window.FlowDown = window.FlowDown || {});
