@@ -69,13 +69,13 @@
                         let action = e.detail;
                         mutators.forEach(mutator => {
                             mutator.call({
-                                get: this.get,
-                                set: this.set,
-                                push: this.push,
-                                pop: this.pop,
-                                splice: this.splice,
-                                shift: this.shift,
-                                unshift: this.unshift
+                                get: this.get.bind(this),
+                                set: this.set.bind(this),
+                                push: this.push.bind(this),
+                                pop: this.pop.bind(this),
+                                splice: this.splice.bind(this),
+                                shift: this.shift.bind(this),
+                                unshift: this.unshift.bind(this)
                             }, action);
                         });
                     }
