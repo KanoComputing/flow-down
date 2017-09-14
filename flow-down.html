@@ -31,7 +31,7 @@
                         Object.keys(this.constructor.properties).forEach((propertyName) => {
                             var property = this.constructor.properties[propertyName];
                             if (property.linkState){
-                                this.set(propertyName, appStateComponent.get(property.linkState));
+                                this.set(propertyName, appStateComponent.get(`state.${property.linkState}`));
                                 var setValue = (path, value) => {
                                     this.set(path, value);
                                     this.notifyPath(path);
