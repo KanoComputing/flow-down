@@ -6,7 +6,8 @@
                 mutators = [],
                 storeId = storesCount++,
                 appStateComponent,
-                providerMixin, receiverMixin;
+                providerMixin, receiverMixin,
+                ReceiverBehavior, ProviderBehavior;
             function addWatcher (component, property, propertyName, setValue) {
                 watchers.push({
                     set: setValue,
@@ -24,24 +25,107 @@
             function dispatch (action) {
                 window.dispatchEvent(new CustomEvent(`action-${storeId}`, { detail: action }));
             }
+            function scanProperties (el, properties) {
+                if (!properties) {
+                    return;
+                }
+                Object.keys(properties).forEach((propertyName) => {
+                    var property = properties[propertyName];
+                    if (property.linkState){
+                        el.set(propertyName, appStateComponent.get(`state.${property.linkState}`));
+                        var setValue = (path, value) => {
+                            el.set(path, value);
+                            el.notifyPath(path);
+                        };
+                        addWatcher(el, property, propertyName, setValue);
+                    }
+                });
+            }
+            function onAction(e) {
+                let action = e.detail;
+                mutators.forEach(mutator => {
+                    mutator.call({
+                        get: appStateComponent.get.bind(appStateComponent),
+                        set: appStateComponent.set.bind(appStateComponent),
+                        push: appStateComponent.push.bind(appStateComponent),
+                        pop: appStateComponent.pop.bind(appStateComponent),
+                        splice: appStateComponent.splice.bind(appStateComponent),
+                        shift: appStateComponent.shift.bind(appStateComponent),
+                        unshift: appStateComponent.unshift.bind(appStateComponent)
+                    }, action);
+                });
+            }
+            function stateChanged(changeRecord) {
+                watchers.forEach((watcher) => {
+                    let statePath = `state.${watcher.property.linkState}`;
+                    if (changeRecord.path == statePath) {
+                        // Perfect match of paths
+                        watcher.set(watcher.propertyName, changeRecord.value);
+                    } else if (changeRecord.path.startsWith(statePath)) {
+                        if (changeRecord.path.endsWith('.splices')) {
+                            // Splice changes
+                            var value = appStateComponent.get(statePath);
+                            watcher.set(watcher.propertyName, value.slice());
+                        } else {
+                            if (watcher.property.type === Array && changeRecord.path.endsWith('.length')) {
+                                // Avoid changing the lengths of arrays
+                                return;
+                            }
+                            // Parent change
+                            watcher.set(changeRecord.path.replace(statePath, watcher.propertyName), changeRecord.value);
+                        }
+                    } else if (statePath.startsWith(changeRecord.path)) {
+                        // Parent node in the path was changed, update the value altogether
+                        watcher.set(watcher.propertyName, appStateComponent.get(statePath));
+                    }
+                });
+            }
+            ReceiverBehavior = {
+                attached () {
+                    scanProperties(this, this.properties);
+                },
+                detached () {
+                    removeWatchers();
+                },
+                getState () {
+                    return appStateComponent.state;
+                },
+                dispatch (action) {
+                    dispatch(action);
+                }
+            };
+            ProviderBehavior = {
+                ready () {
+                    appStateComponent = this;
+                    window.addEventListener(`action-${storeId}`, this._onAction.bind(this));
+                },
+                addMutator (mutator) {
+                    addMutator(mutator);
+                },
+                _onAction (e) {
+                    onAction(e);
+                },
+                properties: {
+                    state: {
+                        type: Object,
+                        value: () => {
+                            return initialState || {};
+                        }
+                    }
+                },
+                observers: ['_stateChanged(state.*)'],
+                getState () {
+                    return this.state;
+                },
+                _stateChanged (changeRecord) {
+                    stateChanged(changeRecord);
+                }
+            };
             receiverMixin = (parent) => {
                 return class StateReceiverMixin extends parent {
                     connectedCallback () {
                         super.connectedCallback();
-                        if (!this.constructor.properties) {
-                            return;
-                        }
-                        Object.keys(this.constructor.properties).forEach((propertyName) => {
-                            var property = this.constructor.properties[propertyName];
-                            if (property.linkState){
-                                this.set(propertyName, appStateComponent.get(`state.${property.linkState}`));
-                                var setValue = (path, value) => {
-                                    this.set(path, value);
-                                    this.notifyPath(path);
-                                };
-                                addWatcher(this, property, propertyName, setValue);
-                            }
-                        });
+                        scanProperties(this, this.constructor.properties);
                     }
                     disconnectedCallback () {
                         super.disconnectedCallback();
@@ -66,18 +150,7 @@
                         addMutator(mutator);
                     }
                     _onAction (e) {
-                        let action = e.detail;
-                        mutators.forEach(mutator => {
-                            mutator.call({
-                                get: this.get.bind(this),
-                                set: this.set.bind(this),
-                                push: this.push.bind(this),
-                                pop: this.pop.bind(this),
-                                splice: this.splice.bind(this),
-                                shift: this.shift.bind(this),
-                                unshift: this.unshift.bind(this)
-                            }, action);
-                        });
+                        onAction(e);
                     }
                     static get properties() {
                         return {
@@ -96,35 +169,15 @@
                         return this.state;
                     }
                     _stateChanged (changeRecord) {
-                        watchers.forEach((watcher) => {
-                            let statePath = `state.${watcher.property.linkState}`;
-                            if (changeRecord.path == statePath) {
-                                // Perfect match of paths
-                                watcher.set(watcher.propertyName, changeRecord.value);
-                            } else if (changeRecord.path.startsWith(statePath)) {
-                                if (changeRecord.path.endsWith('.splices')) {
-                                    // Splice changes
-                                    var value = this.get(statePath);
-                                    watcher.set(watcher.propertyName, value.slice());
-                                } else {
-                                    if (watcher.property.type === Array && changeRecord.path.endsWith('.length')) {
-                                        // Avoid changing the lengths of arrays
-                                        return;
-                                    }
-                                    // Parent change
-                                    watcher.set(changeRecord.path.replace(statePath, watcher.propertyName), changeRecord.value);
-                                }
-                            } else if (statePath.startsWith(changeRecord.path)) {
-                                // Parent node in the path was changed, update the value altogether
-                                watcher.set(watcher.propertyName, this.get(statePath));
-                            }
-                        });
+                        stateChanged(changeRecord);
                     }
                 }
             };
             return {
                 StateReceiver: receiverMixin,
                 StateProvider: providerMixin,
+                ReceiverBehavior,
+                ProviderBehavior,
                 addMutator,
                 dispatch
             }
