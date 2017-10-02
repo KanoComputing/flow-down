@@ -1,6 +1,6 @@
 # FlowDown
 
-FlowDown is a Redux style data flow management set of mixins for Polymer 2.x+ applications.
+FlowDown is a Redux style data flow management set of mixins and behaviors for Polymer 1.x/2.x applications.
 
 FlowDown rides on top of Polymer's observer system. It watches all the changes in an app level state and propagate the changes to the state receivers' properties, only allowing the state to flow down from the app's top level.
 
@@ -145,6 +145,8 @@ this.set('state.todos.0.done', true);
 
  - `StateProvider`: The state provider mixin
  - `StateReceiver`: The state receiver mixin
+ - `ProviderBehavior`: The state provider behavior
+ - `ReceiverBehavior`: The state receiver behavior
 
 ### StateProvider
  - `addMutator(mutator)` same as the store's `addMutator`
