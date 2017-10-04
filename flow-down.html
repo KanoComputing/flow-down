@@ -4,6 +4,7 @@
         FlowDown.createStore = (initialState) => {
             let watchers = [],
                 mutators = [],
+                actionStack = [],
                 storeId = storesCount++,
                 appStateComponent,
                 providerMixin, receiverMixin,
@@ -23,7 +24,11 @@
                 mutators.push(mutator);
             }
             function dispatch (action) {
-                window.dispatchEvent(new CustomEvent(`action-${storeId}`, { detail: action }));
+                if (!appStateComponent) {
+                    actionStack.push(action);
+                } else {
+                    window.dispatchEvent(new CustomEvent(`action-${storeId}`, { detail: action }));
+                }
             }
             function scanProperties (el, properties) {
                 if (!properties) {
@@ -80,6 +85,11 @@
                     }
                 });
             }
+            function replayStackedActions () {
+                actionStack.forEach(action => {
+                    dispatch(action);
+                });
+            }
             ReceiverBehavior = {
                 attached () {
                     scanProperties(this, this.properties);
@@ -98,6 +108,7 @@
                 ready () {
                     appStateComponent = this;
                     window.addEventListener(`action-${storeId}`, this._onAction.bind(this));
+                    replayStackedActions();
                 },
                 addMutator (mutator) {
                     addMutator(mutator);
@@ -145,6 +156,7 @@
                         super();
                         appStateComponent = this;
                         window.addEventListener(`action-${storeId}`, this._onAction.bind(this));
+                        replayStackedActions();
                     }
                     addMutator (mutator) {
                         addMutator(mutator);
