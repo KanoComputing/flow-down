@@ -90,6 +90,14 @@
                     dispatch(action);
                 });
             }
+            function collect (what, which) {
+                let res = {};
+                while (what) {
+                    res = Object.assign({}, what[which], res); // Respect prototype priority
+                    what = Object.getPrototypeOf(what);
+                }
+                return res;
+            };
             ReceiverBehavior = {
                 attached () {
                     scanProperties(this, this.properties);
@@ -136,7 +144,8 @@
                 return class StateReceiverMixin extends parent {
                     connectedCallback () {
                         super.connectedCallback();
-                        scanProperties(this, this.constructor.properties);
+                        const properties = collect(this.constructor, 'properties');
+                        scanProperties(this, properties);
                     }
                     disconnectedCallback () {
                         super.disconnectedCallback();
