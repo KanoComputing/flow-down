@@ -17,8 +17,14 @@
                     propertyName: propertyName
                 });
             }
-            function removeWatchers () {
-                watchers = [];
+            function removeWatchers (component) {
+                if (component) {
+                    watchers = watchers.filter(watcher => {
+                        return watcher.component !== component;
+                    });
+                } else {
+                    watchers = [];
+                }
             }
             function addMutator (mutator) {
                 mutators.push(mutator);
@@ -103,7 +109,7 @@
                     scanProperties(this, this.properties);
                 },
                 detached () {
-                    removeWatchers();
+                    removeWatchers(this);
                 },
                 getState () {
                     return appStateComponent.state;
@@ -117,6 +123,9 @@
                     appStateComponent = this;
                     window.addEventListener(`action-${storeId}`, this._onAction.bind(this));
                     replayStackedActions();
+                },
+                detached () {
+                    removeWatchers();
                 },
                 addMutator (mutator) {
                     addMutator(mutator);
@@ -149,7 +158,7 @@
                     }
                     disconnectedCallback () {
                         super.disconnectedCallback();
-                        removeWatchers();
+                        removeWatchers(this);
                     }
                     getState () {
                         return appStateComponent.state;
@@ -166,6 +175,10 @@
                         appStateComponent = this;
                         window.addEventListener(`action-${storeId}`, this._onAction.bind(this));
                         replayStackedActions();
+                    }
+                    disconnectedCallback () {
+                        super.disconnectedCallback();
+                        removeWatchers();
                     }
                     addMutator (mutator) {
                         addMutator(mutator);
