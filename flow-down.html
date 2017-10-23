@@ -75,8 +75,11 @@
                     } else if (changeRecord.path.startsWith(statePath)) {
                         if (changeRecord.path.endsWith('.splices')) {
                             // Splice changes
-                            var value = appStateComponent.get(statePath);
-                            watcher.set(watcher.propertyName, value.slice());
+                            let cp = changeRecord.path,
+                                changePath = cp.substring(0, cp.lastIndexOf('.')),
+                                pathTail = changePath.replace(statePath, ''),
+                                propertyPath = `${watcher.propertyName}${pathTail}`;
+                                watcher.component.notifySplices(propertyPath, changeRecord.value.indexSplices);
                         } else {
                             if (watcher.property.type === Array && changeRecord.path.endsWith('.length')) {
                                 // Avoid changing the lengths of arrays
