@@ -1,0 +1,26 @@
+{
+  "name": "flow-down",
+  "version": "1.0.0",
+  "description": "FlowDown is a Redux style data flow management set of mixins and behaviors for Polymer 1.x/2.x applications.",
+  "main": "flow-down.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KanoComputing/flow-down.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KanoComputing/flow-down/issues"
+  },
+  "homepage": "https://github.com/KanoComputing/flow-down#readme",
+  "devDependencies": {
+    "rollup": "^0.56.3"
+  }
+}
