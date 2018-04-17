@@ -5,8 +5,10 @@
 }(this, (function () { 'use strict';
 
 let storesCount = 0;
-const stores = new Map();
+const stores = window.__flowDownStores__ || new Map();
 const FlowDown = {};
+
+window.__flowDownStores__ = stores;
 
 function addWatcher(sId, component, property, propertyName, setValue) {
     const store = stores.get(sId);
