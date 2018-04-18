@@ -1,5 +1,3 @@
-
-let storesCount = 0;
 const stores = window.__flowDownStores__ || new Map();
 const FlowDown = {};
 
@@ -128,7 +126,7 @@ FlowDown.createStore = (initialState) => {
        watchers: [],
        mutators: [],
        actionStack: [],
-       id: storesCount++,
+       id: stores.size,
     };
     const ReceiverBehavior = {
         attached() {
