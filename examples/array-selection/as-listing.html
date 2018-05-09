@@ -1,0 +1,132 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="./state.html">
+<link rel="import" href="./as-listing.html">
+
+<dom-module id="as-listing">
+    <template>
+        <style>
+            :host {
+                display: block;
+                font-family: Arial;
+            }
+            .iron-selected {
+                background: bisque;
+            }
+            button {
+                cursor: pointer;
+                border: 2px solid black;
+                padding: 8px 16px;
+                background: azure;
+            }
+            button:focus {
+                outline: none;
+                border-color: gray;
+            }
+            input {
+                padding: 8px 16px;
+            }
+        </style>
+        <div>
+            <h1>Blorgs</h1>
+            <iron-selector selected="[[index]]" on-selected-changed="_selectedBlorgChanged">
+                <template is="dom-repeat" items="[[blorgs]]">
+                    <button>[[item.name]]</button>
+                </template>
+            </iron-selector>
+            <input id="input" type="text" on-keyup="_keyUpped" value="[[blorg.name]]">
+            <div>
+                <h3>Selected Blorg</h3>
+                <div>Name: [[blorg.name]]</div>
+            </div>
+        </div>
+        <div>
+            <h1>Duffs</h1>
+            <iron-selector selected="[[duffIndex]]" on-selected-changed="_selectedDuffChanged">
+                <template is="dom-repeat" items="[[duffs]]">
+                    <button>[[item]]</button>
+                </template>
+            </iron-selector>
+            <div>
+                <h3>Selected Duff</h3>
+                <div>[[duff]]</div>
+            </div>
+        </div>
+        <div>
+            <h1>Grups</h1>
+            <iron-selector selected="[[selectedGrupKey]]" on-selected-changed="_selectedGrupChanged" attr-for-selected="name">
+                <template is="dom-repeat" items="[[_toArray(grups.*)]]">
+                    <button name$="[[item.key]]">[[item.key]]</button>
+                </template>
+            </iron-selector>
+            <div>
+                <h3>Selected Grup</h3>
+                <div>[[grup]]</div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        /**
+         * @customElement
+         * @polymer
+         */
+        class AsListing extends ASApp.Store.StateReceiver(Polymer.Element) {
+            static get is() { return 'as-listing'; }
+            static get properties() {
+                return {
+                    blorgs: {
+                        linkState: 'blorgs',
+                    },
+                    index: {
+                        linkState: 'selectedBlorgIndex',
+                    },
+                    blorg: {
+                        linkArray: 'blorgs',
+                        linkIndex: 'index',
+                    },
+                    duffs: {
+                        linkState: 'duffs',
+                    },
+                    duffIndex: {
+                        linkState: 'selectedDuffIndex',
+                    },
+                    duff: {
+                        linkArray: 'duffs',
+                        linkIndex: 'duffIndex',
+                    },
+                    grups: {
+                        linkState: 'grups',
+                    },
+                    selectedGrupKey: {
+                        linkState: 'selectedGrupKey',
+                    },
+                    grup: {
+                        linkArray: 'grups',
+                        linkIndex: 'selectedGrupKey',
+                    },
+                };
+            }
+            _selectedBlorgChanged(e) {
+                this.dispatch({ type: 'SELECT_BLORG', index: e.detail.value });
+            }
+            _selectedDuffChanged(e) {
+                this.dispatch({ type: 'SELECT_DUFF', index: e.detail.value });
+            }
+            _selectedGrupChanged(e) {
+                this.dispatch({ type: 'SELECT_GRUP', key: e.detail.value });
+            }
+            _keyUpped() {
+                const { value } = this.$.input;
+                const { index } = this;
+                this.dispatch({ type: 'UPDATE_BLORG_NAME', index, value });
+            }
+            _toArray() {
+                return Object.keys(this.grups).map(key => ({ key, value: this.grups[key] }));
+            }
+        }
+
+        window.customElements.define(AsListing.is, AsListing);
+    </script>
+</dom-module>

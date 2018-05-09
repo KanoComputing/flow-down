@@ -1,3 +1,5 @@
+import collect from './lib/collect.js';
+
 const stores = window.__flowDownStores__ || new Map();
 const FlowDown = {};
 
@@ -112,21 +114,12 @@ function replayStackedActions(sId) {
     store.actionStack.forEach(action => dispatch(sId, action));
 }
 
-function collect(what, which) {
-    let res = {};
-    while (what) {
-        res = Object.assign({}, what[which], res); // Respect prototype priority
-        what = Object.getPrototypeOf(what);
-    }
-    return res;
-}
-
 FlowDown.createStore = (initialState) => {
     const store = {
-       watchers: [],
-       mutators: [],
-       actionStack: [],
-       id: stores.size,
+        watchers: [],
+        mutators: [],
+        actionStack: [],
+        id: stores.size,
     };
     const ReceiverBehavior = {
         attached() {
