@@ -15,6 +15,11 @@
     "tests"
   ],
   "devDependencies": {
-    "polymer": "^2.0.2"
+    "polymer": "^2.0.2",
+    "iron-selector": "PolymerElements/iron-selector#^2.1.0"
+  },
+  "resolutions": {
+    "polymer": "^2.0.2",
+    "webcomponentsjs": "^v1.0.19"
   }
 }

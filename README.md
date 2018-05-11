@@ -158,3 +158,85 @@ this.set('state.todos.0.done', true);
 Any element extending the StateReceiver mixin and declaring a `linkState` on their properties will have a dynamic link between the property and the state's data setup.
 
 `linkState` expect a path to a value in the state (NOT prefixed by `state`)
+
+## Utils
+
+### types
+
+The type property in actions should be unique, but when creating multiple mutators in different files, using a string can end up in duplicate types. The types util takes an array of string as an input and returns an object with the array's items as keys pointing to a symbol, ensuring its uniqueness:
+
+```js
+import types from './node_modules/flow-down/lib/types.js';
+
+const TYPES = types(['SELECT', 'INCREMENT', 'ADD']);
+
+// Now you can use your types in your mutator and dispatches
+function mutator(action) {
+    switch (action.type) {
+    case TYPES.SELECT: {
+        // Do something
+        break;
+    }
+    case TYPES.INCREMENT: {
+        // Do something
+        break;
+    }
+    case TYPES.ADD: {
+        // Do something
+        break;
+    }
+    default: {
+        break;
+    }
+    }
+}
+
+// Use to dispatch
+store.dispatch({ type: TYPES.SELECT });
+```
+
+## Plugins
+
+### ArraySelector
+
+You can use the ArraySelectorPlugin to allow your receivers to have a property holding an item from an array in the state, pointed by an index.
+
+To use it, just give the store to the plugin, then use `linkArray` and `linkIndex` in your receiver to configure the selected item property:
+
+```js
+import FlowDown from './node_modules/flow-down/flow-down.js';
+import ArraySelector from './node_modules/flow-down/plugin/array-selector.js';
+
+// Creat store with array and index
+const store = FlowDown.create({
+    items: [1, 2, 3, 4, 5, 6, 7],
+    selectedItemIndex: 3,
+});
+
+// Enable the plugin
+ArraySelector(store);
+
+// Create receiver element
+class MyEl extends store.StateReceiver(Polymer.Element) {
+    static get properties() {
+        return {
+            // Link the array
+            items: {
+                linkState: 'items',
+            },
+            // Link the index
+            index: {
+                linkState: 'selectedItemIndex',
+            },
+            // Configure the item property
+            item: {
+                linkArray: 'items',
+                linkIndex: 'index',
+            },
+        }
+    }
+}
+
+```
+
+By updateing the state through mutations, the item property will update accordingly, but will but be stored in the state as it is duplicate data.

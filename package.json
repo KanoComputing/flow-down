@@ -1,6 +1,6 @@
 {
   "name": "flow-down",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "FlowDown is a Redux style data flow management set of mixins and behaviors for Polymer 1.x/2.x applications.",
   "main": "flow-down.js",
   "directories": {

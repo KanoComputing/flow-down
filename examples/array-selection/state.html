@@ -1,0 +1,52 @@
+<link rel="import" href="../../flow-down.html">
+<link rel="import" href="../../array-selector.html">
+<script>
+    ((ASApp) => {
+
+        ASApp.Store = FlowDown.createStore({
+            selectedBlorgIndex: 1,
+            blorgs: [{
+                name: 'Hello',
+            }, {
+                name: 'Potatoes',
+            }, {
+                name: 'Tomatoes',
+            }],
+            duffs: [2, 3, 6, 9, 1],
+            selectedDuffIndex: 2,
+            grups: {
+                one: 1,
+                two: 2,
+                three: 3,
+            },
+            selectedGrupKey: 'two',
+        });
+
+        FlowDown.ArraySelector(ASApp.Store);
+
+        ASApp.Store.addMutator(function (action) {
+            switch(action.type) {
+            case 'SELECT_BLORG': {
+                this.set('state.selectedBlorgIndex', action.index);
+                break;
+            }
+            case 'SELECT_DUFF': {
+                this.set('state.selectedDuffIndex', action.index);
+                break;
+            }
+            case 'SELECT_GRUP': {
+                this.set('state.selectedGrupKey', action.key);
+                break;
+            }
+            case 'UPDATE_BLORG_NAME': {
+                this.set(`state.blorgs.${action.index}.name`, action.value);
+                break;
+            }
+            default: {
+                break;
+            }
+            }
+        })
+
+    })(window.ASApp = window.ASApp || {});
+</script>

@@ -1,0 +1,28 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="./state.html">
+<link rel="import" href="./as-listing.html">
+
+<dom-module id="as-app">
+    <template>
+        <style>
+        :host {
+            display: block;
+        }
+        </style>
+        <h2>FlowDown Listing</h2>
+        <as-listing></as-listing>
+        <index-selector items="{{blorgs}}" selected-item="{{selectedBlorg}}" selected-index="{{selectedBlorgIndex}}"></index-selector>
+    </template>
+
+    <script>
+        /**
+         * @customElement
+         * @polymer
+         */
+        class App extends ASApp.Store.StateProvider(Polymer.Element) {
+            static get is() { return 'as-app'; }
+        }
+
+        window.customElements.define(App.is, App);
+    </script>
+</dom-module>
