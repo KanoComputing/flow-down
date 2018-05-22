@@ -1,0 +1,16 @@
+{
+    "files": {
+        "flow-down.html": {
+            "convertedUrl": "flow-down.js",
+            "exports": {
+                "FlowDown": "FlowDown"
+            }
+        },
+        "array-selector.html": {
+            "convertedUrl": "array-selector.js",
+            "exports": {
+                "FlowDown.ArraySelector": "ArraySelector"
+            }
+        }
+    }
+}
