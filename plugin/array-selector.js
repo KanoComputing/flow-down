@@ -44,8 +44,12 @@ const arraySelectorPlugin = (store) => {
                     const subPath = path.replace(`${itemsProp}.`, '');
                     const parts = subPath.split('.');
                     const idx = parts.shift();
+                    const indexValue = this[indexProp];
+                    if (typeof indexValue === 'undefined' || indexValue === null) {
+                        return;
+                    }
                     // Compare indexes as key to support both hashs and arrays
-                    if (idx === this[indexProp].toString()) {
+                    if (idx === indexValue.toString()) {
                         if (parts.length) {
                             this.notifyPath(`${itemProp}.${parts.join('.')}`);
                         } else {
@@ -60,6 +64,9 @@ const arraySelectorPlugin = (store) => {
         }
         _applySplices(indexProp, indexLink, splices) {
             let idx;
+            if (!store.appStateComponent) {
+                return;
+            }
             // Adjust selected indices and mark removals
             for (let i = 0; i < splices.length; i += 1) {
                 const s = splices[i];
