@@ -104,6 +104,12 @@ function stateChanged(sId, changeRecord) {
     });
 }
 
+function dispose(sId) {
+    const store = stores.get(sId);
+    store.appStateComponent = null;
+    stores.delete(sId);
+}
+
 function getState(sId) {
     const { appStateComponent } = stores.get(sId);
     return appStateComponent.state;
@@ -239,6 +245,7 @@ FlowDown.createStore = (initialState) => {
     store.addMutator = addMutator.bind(null, store.id);
     store.dispatch = dispatch.bind(null, store.id);
     store.getState = getState.bind(null, store.id);
+    store.dispose = dispose.bind(null, store.id);
     stores.set(store.id, store);
     return store;
 };
