@@ -34,7 +34,9 @@ function dispatch(sId, action) {
     if (!store.appStateComponent) {
         store.actionStack.push(action);
     } else {
-        window.dispatchEvent(new CustomEvent(`action-${sId}`, { detail: action }));
+        window.dispatchEvent(new CustomEvent(`action-${sId}`, {
+            detail: action
+        }));
     }
 }
 
@@ -56,10 +58,30 @@ function scanProperties(sId, el, properties) {
     });
 }
 
+function scanObservers(sId, el, observers) {
+    if (!observers) {
+        return;
+    }
+    const store = stores.get(sId);
+    Object.keys(observers).forEach((observerName) => {
+        const observer = observers[observerName];
+        if (observer.dependencies) {
+            /* el.set(propertyName, store.appStateComponent.get(`state.${property.linkState}`));
+            const setValue = (path, value) => {
+                el.set(path, value);
+                el.notifyPath(path);
+            };
+            addWatcher(sId, el, property, propertyName, setValue); */
+        }
+    });
+}
+
 function onAction(sId, e) {
     const action = e.detail;
     const store = stores.get(sId);
-    const { appStateComponent } = store;
+    const {
+        appStateComponent
+    } = store;
     store.mutators.forEach((mutator) => {
         mutator.call({
             get: appStateComponent.get.bind(appStateComponent),
@@ -75,7 +97,9 @@ function onAction(sId, e) {
 
 function stateChanged(sId, changeRecord) {
     const store = stores.get(sId);
-    const { appStateComponent } = store;
+    const {
+        appStateComponent
+    } = store;
     store.watchers.forEach((watcher) => {
         const statePath = `state.${watcher.property.linkState}`;
         if (changeRecord.path == statePath) {
@@ -111,7 +135,9 @@ function dispose(sId) {
 }
 
 function getState(sId) {
-    const { appStateComponent } = stores.get(sId);
+    const {
+        appStateComponent
+    } = stores.get(sId);
     return appStateComponent.state;
 }
 
@@ -130,6 +156,7 @@ FlowDown.createStore = (initialState) => {
     const ReceiverBehavior = {
         attached() {
             scanProperties(this.getStoreId(), this, this.properties);
+            scanObservers(this.getStoreId(), this, this.multi);
         },
         detached() {
             removeWatchers(this.getStoreId(), this);
@@ -181,7 +208,9 @@ FlowDown.createStore = (initialState) => {
             connectedCallback() {
                 super.connectedCallback();
                 const properties = collect(this.constructor, 'properties');
+                const observers = collect(this.constructor, 'multi');
                 scanProperties(this.getStoreId(), this, properties);
+                scanObservers(this.getStoreId(), this, observers);
             }
             disconnectedCallback() {
                 super.disconnectedCallback();
