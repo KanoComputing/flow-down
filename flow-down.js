@@ -34,7 +34,9 @@ function dispatch(sId, action) {
     if (!store.appStateComponent) {
         store.actionStack.push(action);
     } else {
-        window.dispatchEvent(new CustomEvent(`action-${sId}`, { detail: action }));
+        window.dispatchEvent(new CustomEvent(`action-${sId}`, {
+            detail: action
+        }));
     }
 }
 
@@ -56,10 +58,20 @@ function scanProperties(sId, el, properties) {
     });
 }
 
+function scanObservers(sId, el, observers) {
+    if (!observers) {
+        return;
+    }
+    const store = stores.get(sId);
+
+}
+
 function onAction(sId, e) {
     const action = e.detail;
     const store = stores.get(sId);
-    const { appStateComponent } = store;
+    const {
+        appStateComponent
+    } = store;
     store.mutators.forEach((mutator) => {
         mutator.call({
             get: appStateComponent.get.bind(appStateComponent),
@@ -75,8 +87,11 @@ function onAction(sId, e) {
 
 function stateChanged(sId, changeRecord) {
     const store = stores.get(sId);
-    const { appStateComponent } = store;
+    const {
+        appStateComponent
+    } = store;
     store.watchers.forEach((watcher) => {
+        console.log({ watcher });
         const statePath = `state.${watcher.property.linkState}`;
         if (changeRecord.path == statePath) {
             // Perfect match of paths
@@ -111,7 +126,9 @@ function dispose(sId) {
 }
 
 function getState(sId) {
-    const { appStateComponent } = stores.get(sId);
+    const {
+        appStateComponent
+    } = stores.get(sId);
     return appStateComponent.state;
 }
 
@@ -130,6 +147,7 @@ FlowDown.createStore = (initialState) => {
     const ReceiverBehavior = {
         attached() {
             scanProperties(this.getStoreId(), this, this.properties);
+            scanObservers(this.getStoreId(), this, this.observers);
         },
         detached() {
             removeWatchers(this.getStoreId(), this);
@@ -165,7 +183,7 @@ FlowDown.createStore = (initialState) => {
                 value: () => initialState || {},
             },
         },
-        observers: ['_stateChanged(state.*)'],
+        observers: ['_stateChanged(state.*)', ...this.observers],
         getState() {
             return getState(this.getStoreId());
         },
@@ -181,7 +199,9 @@ FlowDown.createStore = (initialState) => {
             connectedCallback() {
                 super.connectedCallback();
                 const properties = collect(this.constructor, 'properties');
+                const observers = collect(this.constructor, 'observers');
                 scanProperties(this.getStoreId(), this, properties);
+                scanObservers(this.getStoreId(), this, observers);
             }
             disconnectedCallback() {
                 super.disconnectedCallback();
@@ -225,7 +245,7 @@ FlowDown.createStore = (initialState) => {
                 };
             }
             static get observers() {
-                return ['_stateChanged(state.*)'];
+                return ['_stateChanged(state.*)', ...this.observers];
             }
             getState() {
                 return getState(this.getStoreId());
