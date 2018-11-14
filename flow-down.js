@@ -63,17 +63,7 @@ function scanObservers(sId, el, observers) {
         return;
     }
     const store = stores.get(sId);
-    Object.keys(observers).forEach((observerName) => {
-        const observer = observers[observerName];
-        if (observer.dependencies) {
-            /* el.set(propertyName, store.appStateComponent.get(`state.${property.linkState}`));
-            const setValue = (path, value) => {
-                el.set(path, value);
-                el.notifyPath(path);
-            };
-            addWatcher(sId, el, property, propertyName, setValue); */
-        }
-    });
+
 }
 
 function onAction(sId, e) {
@@ -101,6 +91,7 @@ function stateChanged(sId, changeRecord) {
         appStateComponent
     } = store;
     store.watchers.forEach((watcher) => {
+        console.log({ watcher });
         const statePath = `state.${watcher.property.linkState}`;
         if (changeRecord.path == statePath) {
             // Perfect match of paths
@@ -156,7 +147,7 @@ FlowDown.createStore = (initialState) => {
     const ReceiverBehavior = {
         attached() {
             scanProperties(this.getStoreId(), this, this.properties);
-            scanObservers(this.getStoreId(), this, this.multi);
+            scanObservers(this.getStoreId(), this, this.observers);
         },
         detached() {
             removeWatchers(this.getStoreId(), this);
@@ -192,7 +183,7 @@ FlowDown.createStore = (initialState) => {
                 value: () => initialState || {},
             },
         },
-        observers: ['_stateChanged(state.*)'],
+        observers: ['_stateChanged(state.*)', ...this.observers],
         getState() {
             return getState(this.getStoreId());
         },
@@ -208,7 +199,7 @@ FlowDown.createStore = (initialState) => {
             connectedCallback() {
                 super.connectedCallback();
                 const properties = collect(this.constructor, 'properties');
-                const observers = collect(this.constructor, 'multi');
+                const observers = collect(this.constructor, 'observers');
                 scanProperties(this.getStoreId(), this, properties);
                 scanObservers(this.getStoreId(), this, observers);
             }
@@ -254,7 +245,7 @@ FlowDown.createStore = (initialState) => {
                 };
             }
             static get observers() {
-                return ['_stateChanged(state.*)'];
+                return ['_stateChanged(state.*)', ...this.observers];
             }
             getState() {
                 return getState(this.getStoreId());
